@@ -8,7 +8,12 @@ class Premailer
           return unless asset_pipeline_present?
 
           file = file_name(url)
-          ::Rails.application.assets_manifest.find_sources(file).first
+
+          if defined?(::Sprockets::Railtie)
+            ::Rails.application.assets_manifest.find_sources(file).first
+          elsif defined?(::Propshaft::Railtie)
+            ::Rails.application.assets.load_path.find(file).content
+          end
         rescue Errno::ENOENT, TypeError => _error
         end
 
@@ -26,9 +31,7 @@ class Premailer
         def asset_pipeline_present?
           defined?(::Rails) &&
             ::Rails.respond_to?(:application) &&
-            ::Rails.application &&
-            ::Rails.application.respond_to?(:assets_manifest) &&
-            ::Rails.application.assets_manifest
+            (defined?(::Sprockets::Railtie) || defined?(::Propshaft::Railtie))
         end
       end
     end
